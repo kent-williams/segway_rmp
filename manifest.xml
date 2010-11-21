@@ -1,5 +1,5 @@
 <package>
-  <author>Morgan Quigley, with USB-CAN interface courtesy Mike Montemerlo</author>
+  <author>Kent Williams and Justin Kuehn, adapted from Morgan Quigley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="std_msgs"/>
@@ -7,6 +7,5 @@
   <depend package="geometry_msgs"/>
   <depend package="roscpp"/>
   <depend package="tf"/>
-  <depend package="serial_port"/>
 </package>
 
