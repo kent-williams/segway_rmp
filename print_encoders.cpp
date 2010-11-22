@@ -16,7 +16,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "usage: print_encoders DEVICE_OF_APOX_USBCAN\n");
     return 1;
   }
-  SegwayApox segway(argv[1]);
+  SegwayApox segway;
   signal(SIGINT, ctrlc_handler);
   printf("entering print loop. ctrl-c to exit.\n");
   float x = 0, y = 0, yaw = 0;

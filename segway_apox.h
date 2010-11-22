@@ -8,12 +8,12 @@
 
 #include <stdint.h>
 
-class LightweightSerial;
-
+class DualCANIO;
+class CanPacket;
 class SegwayApox
 {
 public:
-  SegwayApox(const char *device);
+  SegwayApox();
   ~SegwayApox();
 
   void send_vel_cmd(float x_vel, float yaw_rate);
@@ -34,7 +34,7 @@ protected:
 
   // Hack'd
   int CanBusSetup();
-  void MakeVelocityCommand(CanPacket* pkt, int32_t xspeed, int32_t yawspeed);
+  void MakeVelocityCommand(CanPacket* pkt, uint16_t trans, uint16_t rot);
   bool send_canio_packet(CanPacket& pkt);
 
 //  bool send_apox_config_command(uint8_t command);

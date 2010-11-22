@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include "segway_apox.h"
-
+#include "canio.h"
 #include "canio_kvaser.h"
 #include "rmp_frame.h"
 
@@ -12,13 +12,13 @@ using std::string;
 
 static const float MAX_X_VEL = 1.2;
 static const float MAX_YAW_RATE = 0.4;
-static const int RMP_MAX_TRANS_VEL_COUNT = 1176;
-static const int RMP_MAX_ROT_VEL_COUNT = 1024;
+/*static const int RMP_MAX_TRANS_VEL_COUNT = 1176;
+static const int RMP_MAX_ROT_VEL_COUNT = 1024;*/
 static const uint8_t USB_DLE = 0x10;
 static const uint8_t USB_STX = 0x02;
 static const uint8_t USB_ETX = 0x03;
 
-SegwayApox::SegwayApox(const char *device)
+SegwayApox::SegwayApox()
 : odom_init_complete(false), 
   integrated_x(0), integrated_y(0), integrated_yaw(0),
   parser_state(START_DLE), incoming_write_pos(0)
@@ -41,9 +41,16 @@ SegwayApox::SegwayApox(const char *device)
   send_apox_config_command('R'); // start RUN mode
   send_apox_config_command(0x22); // set NORMAL mode
 */
-
+  fprintf(stderr, "above canbussetup");
   // New Canio
-  CanBustSetup();
+  if(CanBusSetup() < 0)
+  {
+    fprintf(stderr, "Can Bus Failed to Initialize!");
+  }
+  else
+  {
+    fprintf(stderr, "Can Bust Initialized...");
+  }
 }
 
 SegwayApox::~SegwayApox()
@@ -64,7 +71,8 @@ SegwayApox::CanBusSetup()
 
   // start the CAN at 500 kpbs
   if(this->canio->Init(500000) < 0)
-  {
+  
+{
     return(-1);
   }
   return 0;
@@ -87,7 +95,7 @@ SegwayApox::MakeVelocityCommand(CanPacket* pkt,
 
 bool SegwayApox::send_canio_packet(CanPacket& pkt)
 {
-	  return(canio->WritePacket(pkt) > 0);
+	  return(canio->WritePacket(pkt) >= 0);
 }
 
 

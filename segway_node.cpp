@@ -32,10 +32,10 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "segway_apox");
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
-  std::string port("/dev/ttyUSB2");
-  nh_private.getParam("port", port);
-  ROS_DEBUG("opening canbus on %s\n", port.c_str());
-  SegwayApox segway(port.c_str());
+//  std::string port("/dev/ttyUSB2");
+//  nh_private.getParam("port", port);
+//  ROS_DEBUG("opening canbus on %s\n", port.c_str());
+  SegwayApox segway;
 	tf::TransformBroadcaster tf;
   double last_send_time = ros::Time::now().toSec();
   //robot_msgs::PoseStamped odom;

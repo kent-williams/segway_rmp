@@ -41,12 +41,15 @@ CANIOKvaser::~CANIOKvaser()
 int
 CANIOKvaser::Init(long channel_freq)
 {
+
+        printf("Init CANIOKvaser...\n");
 	int ret;
 
 	// Open up both CAN channels
 
 	for (int i =0; i < DUALCAN_NR_CHANNELS; i++)
 	{
+		printf("\tOpening Channel %d...\n", i);
 		if((channels[i] =
 			canOpenChannel(i, canWANT_EXCLUSIVE | canWANT_EXTENDED)) < 0) {
 			return channels[i];
@@ -55,7 +58,9 @@ CANIOKvaser::Init(long channel_freq)
 		// set the channel params: 500Kbps ... CANLIB will set the other params
 		// to defaults if we use BAUD_500K
 		//    if ((ret = canSetBusParams(channels[i], channel_freq, 4, 3, 1, 1, 0)) < 0) {
-		if ((ret = canSetBusParams(channels[i], channel_freq, 0, 0, 0, 0, 0)) < 0)
+		
+                printf("\tSetting Channel Freq...\n");
+                if ((ret = canSetBusParams(channels[i], channel_freq, 0, 0, 0, 0, 0)) < 0)
 			return ret;
 
 		// set filter to only accept packets we are interested in...
@@ -68,6 +73,7 @@ CANIOKvaser::Init(long channel_freq)
 			return ret;
 		}
 
+                printf("Turn on bus...\n");
 		// turn on the bus!
 		if ((ret = canBusOn(channels[i])) < 0)
 			return ret;
@@ -104,9 +110,11 @@ CANIOKvaser::WritePacket(CanPacket &pkt)
 {
 	int ret;
 
-	//printf("CANIO: WRITE: pkt: %s\n", pkt.toString());
+	printf("CANIO: WRITE: pkt: %s\n", pkt.toString());
 
 	for (int i=0; i < DUALCAN_NR_CHANNELS; i++) {
+                
+                printf("Writing to channel %d...\n", i);
 
 		if ((ret = canWriteWait(channels[i], pkt.id, pkt.msg, pkt.dlc,
 				pkt.flags, 1000)) < 0) {
