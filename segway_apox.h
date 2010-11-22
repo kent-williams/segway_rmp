@@ -22,7 +22,8 @@ public:
   { x = integrated_x; y = integrated_y; yaw = integrated_yaw; left = last_left; right = last_right; }
 protected:
 	//dgc_usbcan_p can;
-  LightweightSerial *serial_port;
+	//LightweightSerial *serial_port;
+  DualCANIO *canio;
   bool odom_init_complete;
   float integrated_x, integrated_y, integrated_yaw;
   uint8_t incoming_message[100];
@@ -30,9 +31,15 @@ protected:
   uint8_t incoming_write_pos;
   uint32_t last_left, last_right;
 
-  bool send_apox_config_command(uint8_t command);
-  bool send_apox_packet(uint8_t *packet, uint32_t size);
-  bool send_can_message(uint32_t can_id, uint8_t *message, uint32_t size);
+
+  // Hack'd
+  int CanBusSetup();
+  void MakeVelocityCommand(CanPacket* pkt, int32_t xspeed, int32_t yawspeed);
+  bool send_canio_packet(CanPacket& pkt);
+
+//  bool send_apox_config_command(uint8_t command);
+//  bool send_apox_packet(uint8_t *packet, uint32_t size);
+//  bool send_can_message(uint32_t can_id, uint8_t *message, uint32_t size);
   bool handle_incoming_byte(uint8_t b);
   bool decode_incoming_message();
   int rmp_diff(uint32_t from, uint32_t to);

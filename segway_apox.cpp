@@ -4,7 +4,9 @@
 #include <stdexcept>
 #include <string>
 #include "segway_apox.h"
-#include "serial_port/lightweightserial.h"
+
+#include "canio_kvaser.h"
+#include "rmp_frame.h"
 
 using std::string;
 
@@ -17,7 +19,7 @@ static const uint8_t USB_STX = 0x02;
 static const uint8_t USB_ETX = 0x03;
 
 SegwayApox::SegwayApox(const char *device)
-: serial_port(NULL), odom_init_complete(false), 
+: odom_init_complete(false), 
   integrated_x(0), integrated_y(0), integrated_yaw(0),
   parser_state(START_DLE), incoming_write_pos(0)
 {
@@ -27,6 +29,10 @@ SegwayApox::SegwayApox(const char *device)
     throw std::runtime_error(string("couldn't initialize canbus on ") + 
                              string(device));
   */
+
+
+// Old can
+/*
   serial_port = new LightweightSerial(device, 500000);
   if (!serial_port->is_ok())
     throw std::runtime_error(string("couldn't initialize canbus on ") + 
@@ -34,15 +40,62 @@ SegwayApox::SegwayApox(const char *device)
   send_apox_config_command(0x31); // set baud to 500k
   send_apox_config_command('R'); // start RUN mode
   send_apox_config_command(0x22); // set NORMAL mode
+*/
+
+  // New Canio
+  CanBustSetup();
 }
 
 SegwayApox::~SegwayApox()
 {
   //dgc_usbcan_close(&can);
-  send_apox_config_command(0x23); // set SLEEP mode
-  delete serial_port;
+  //send_apox_config_command(0x23); // set SLEEP mode
+  delete canio;
 }
 
+
+/**********************************************
+ * START HACK
+ **********************************************/
+int
+SegwayApox::CanBusSetup()
+{
+  this->canio = new CANIOKvaser;
+
+  // start the CAN at 500 kpbs
+  if(this->canio->Init(500000) < 0)
+  {
+    return(-1);
+  }
+  return 0;
+}
+
+
+/* takes a player command (in host byte order) and turns it into CAN packets
+ * for the RMP
+ */
+void
+SegwayApox::MakeVelocityCommand(CanPacket* pkt,
+		uint16_t trans,
+		uint16_t rot)
+{
+	pkt->id = RMP_CAN_ID_COMMAND;
+	pkt->PutSlot(2, (uint16_t)RMP_CAN_CMD_NONE);
+	pkt->PutSlot(0, (uint16_t)trans);
+	pkt->PutSlot(1, (uint16_t)rot);
+}
+
+bool SegwayApox::send_canio_packet(CanPacket& pkt)
+{
+	  return(canio->WritePacket(pkt) > 0);
+}
+
+
+/**********************************************
+ * End HACK
+ **********************************************/
+
+/*
 bool SegwayApox::send_apox_packet(uint8_t *packet, uint32_t packet_size)
 {
   unsigned char outgoing_buffer[100], checksum = 0, size = 0;
@@ -70,6 +123,7 @@ bool SegwayApox::send_apox_config_command(uint8_t command)
   pkt[1] = command | 0x80;
   return send_apox_packet(pkt, 2);
 }
+*/
 
 void SegwayApox::send_vel_cmd(float x_vel, float yaw_rate)
 //void build_vel_pkt(uint8_t *send_data)
@@ -134,6 +188,15 @@ void SegwayApox::send_vel_cmd(float x_vel, float yaw_rate)
   // now the bit-wrangling into the packet format
 	unsigned short u_raw_x_vel = (unsigned short)raw_x_vel;
 	unsigned short u_raw_yaw_rate = (unsigned short)raw_yaw_rate;
+	
+	
+	// Hack'd
+	CanPacket pkt;
+	MakeVelocityCommand(&pkt, (uint16_t)u_raw_x_vel, (uint16_t)u_raw_yaw_rate);
+	
+	send_canio_packet(pkt);
+	
+	/*
 	send_data[0] = (u_raw_x_vel >> 8) & 0xff;
 	send_data[1] = u_raw_x_vel & 0xff;
 	send_data[2] = (u_raw_yaw_rate >> 8) & 0xff;
@@ -143,9 +206,11 @@ void SegwayApox::send_vel_cmd(float x_vel, float yaw_rate)
   send_data[6] = 0;
   send_data[7] = 0;
   send_can_message(0x0413, send_data, 8);
+  */
   //dgc_usbcan_send_can_message(can, 0x0413, send_data, 8); // can ID "COMMAND"
 }
 
+/*
 bool SegwayApox::send_can_message(uint32_t can_id, 
                                   uint8_t *message, uint32_t message_size)
 {
@@ -166,6 +231,7 @@ bool SegwayApox::send_can_message(uint32_t can_id,
     pkt[size++] = message[i];
   return send_apox_packet(pkt, size);
 }
+*/
 
 int SegwayApox::rmp_diff(uint32_t from, uint32_t to)
 {
@@ -287,9 +353,11 @@ bool SegwayApox::poll(float timeout_secs)
   bool found_odom_data = false;
   unsigned char incoming_data[100];
   int nread = 0;
+  /*
   while ((nread = serial_port->read_block(incoming_data, sizeof(incoming_data))) > 0)
     for (int i = 0; i < nread; i++)
       found_odom_data |= handle_incoming_byte(incoming_data[i]);
+   */
   return found_odom_data;
 }
 
