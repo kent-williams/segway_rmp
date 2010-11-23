@@ -41,15 +41,14 @@ SegwayApox::SegwayApox()
   send_apox_config_command('R'); // start RUN mode
   send_apox_config_command(0x22); // set NORMAL mode
 */
-  fprintf(stderr, "above canbussetup");
   // New Canio
   if(CanBusSetup() < 0)
   {
-    fprintf(stderr, "Can Bus Failed to Initialize!");
+    fprintf(stderr, "Can Bus Failed to Initialize!\n");
   }
   else
   {
-    fprintf(stderr, "Can Bust Initialized...");
+    fprintf(stderr, "Can Bus Initialized Successfully!\n");
   }
 }
 
@@ -70,13 +69,66 @@ SegwayApox::CanBusSetup()
   this->canio = new CANIOKvaser;
 
   // start the CAN at 500 kpbs
-  if(this->canio->Init(500000) < 0)
-  
-{
+  if(this->canio->Init(BAUD_500K) < 0)  
+  {
+    fprintf(stderr, "FAILED TO INIT CAN BUS!\n");
     return(-1);
   }
+  CanPacket pkt;
+  MakeStatusCommand(&pkt, (uint16_t)RMP_CAN_CMD_RST_INT,
+				(uint16_t)RMP_CAN_RST_ALL);
+  if(send_canio_packet(pkt) < 0)
+  {
+    fprintf(stderr, "Failed to send Can Init Packet!\n");
+    return(-1);
+  }
+  
   return 0;
 }
+
+
+
+/* Creates a status CAN packet from the given arguments
+ */
+void
+SegwayApox::MakeStatusCommand(CanPacket* pkt, uint16_t cmd, uint16_t val)
+{
+	int16_t trans,rot;
+
+	pkt->id = RMP_CAN_ID_COMMAND;
+	pkt->PutSlot(2, cmd);
+
+	// it was noted in the windows demo code that they
+	// copied the 8-bit value into both bytes like this
+	pkt->PutByte(6, val);
+	pkt->PutByte(7, val);
+
+	trans = 0;
+
+	if(trans > RMP_MAX_TRANS_VEL_COUNT)
+		trans = RMP_MAX_TRANS_VEL_COUNT;
+	else if(trans < -RMP_MAX_TRANS_VEL_COUNT)
+		trans = -RMP_MAX_TRANS_VEL_COUNT;
+
+	rot = 0;
+
+	if(rot > RMP_MAX_ROT_VEL_COUNT)
+		rot = RMP_MAX_ROT_VEL_COUNT;
+	else if(rot < -RMP_MAX_ROT_VEL_COUNT)
+		rot = -RMP_MAX_ROT_VEL_COUNT;
+
+	// put in the last speed commands as well
+	pkt->PutSlot(0,(uint16_t)trans);
+	pkt->PutSlot(1,(uint16_t)rot);
+
+	if(cmd)
+	{
+		fprintf(stderr, "SEGWAYIO: STATUS: cmd: %02x val: %02x pkt: %s\n",
+				cmd, val, pkt->toString());
+	}
+}
+
+
 
 
 /* takes a player command (in host byte order) and turns it into CAN packets
@@ -98,6 +150,58 @@ bool SegwayApox::send_canio_packet(CanPacket& pkt)
 	  return(canio->WritePacket(pkt) >= 0);
 }
 
+int SegwayApox::CanBusRead()
+{
+	CanPacket pkt;
+	int channel;
+	int ret;
+	rmp_frame_t data_frame[2];
+
+	//static struct timeval last;
+	//struct timeval curr;
+
+	data_frame[0].ready = 0;
+	data_frame[1].ready = 0;
+
+	// read one cycle of data from each channel
+	for(channel = 0; channel < DUALCAN_NR_CHANNELS; channel++)
+	{
+		ret=0;
+		// read until we've gotten all 5 packets for this cycle on this channel
+		while((ret = canio->ReadPacket(&pkt, channel)) >= 0)
+		{
+			// then we got a new packet...
+			//printf("SEGWAYIO: pkt: %s\n", pkt.toString());
+
+		        /*	
+                        data_frame[channel].AddPacket(pkt);
+
+			// if data has been filled in, then let's make it the latest data
+			// available to player...
+			if(data_frame[channel].IsReady())
+			{
+				// Only bother doing the data conversions for one channel.
+				// It appears that the data on channel 0 is garbarge, so we'll read
+				// from channel 1.
+				if(channel == 1)
+				{
+					//UpdateData(&data_frame[channel]);
+				}
+
+				data_frame[channel].ready = 0;
+				break;
+			}
+                        */
+		}
+
+		if (ret < 0)
+		{
+			printf("error (%d) reading packet on channel %d", ret, channel);
+		}
+	}
+
+	return(0);
+}
 
 /**********************************************
  * End HACK

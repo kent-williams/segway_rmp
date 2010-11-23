@@ -16,6 +16,7 @@ public:
   SegwayApox();
   ~SegwayApox();
 
+  int CanBusRead();
   void send_vel_cmd(float x_vel, float yaw_rate);
   bool poll(float timeout_secs = 1.0);
   inline void get_last_odometry(float &x, float &y, float &yaw, uint32_t &left, uint32_t &right) const
@@ -33,6 +34,7 @@ protected:
 
 
   // Hack'd
+  void MakeStatusCommand(CanPacket* pkt, uint16_t cmd, uint16_t val);
   int CanBusSetup();
   void MakeVelocityCommand(CanPacket* pkt, uint16_t trans, uint16_t rot);
   bool send_canio_packet(CanPacket& pkt);

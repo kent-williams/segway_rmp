@@ -47,6 +47,11 @@ int main(int argc, char **argv)
   ros::Publisher odom_pub = nh.advertise<segway_apox::SegwayOdom>("odom", 1);
   bool req_timeout = true;
 
+  bool first = true;
+  fprintf(stderr, "segway_node: Starting Main Control Loop\n");
+
+ 
+  
   while(ros::ok())
   {
     ros::spinOnce();
@@ -57,7 +62,23 @@ int main(int argc, char **argv)
         req_timeout = true;
       else
         req_timeout = false;
+      
 
+      // Read from the RMP
+      fprintf(stderr, "Reading from rmp...\n");
+
+      if(segway.CanBusRead() < 0)
+      { 
+        fprintf(stderr, "segway_node: Read Failed!\n");
+        break;
+      }
+      
+      if(first)
+      {
+        fprintf(stderr, "segway_node: got data from rmp!\n");
+        first = false;
+      }
+ 
       if (!req_timeout)
       {
         //printf("sending %f %f\n", g_last_cmd_vel.vel.vx, g_last_cmd_vel.ang_vel.vz);
@@ -65,8 +86,14 @@ int main(int argc, char **argv)
         segway.send_vel_cmd(g_last_cmd_vel.linear.x, g_last_cmd_vel.angular.z);
         cmd_mutex.unlock();
       }
+      else
+      {
+        printf("segway_node: Timeout occured!\n");
+      }
       last_send_time = ros::Time::now().toSec();
     }
+
+/*
     if (segway.poll(0.5))
     {
       float x = 0, y = 0, yaw = 0;
@@ -80,27 +107,26 @@ int main(int argc, char **argv)
       odom.y = y;
       odom.yaw = yaw;
       odom_pub.publish(odom);
-      /*
+
       odom.pose.position.x  = x;
       odom.pose.position.y  = y;
       odom.pose.position.z  = 0;
-      */
+      //
       //tf::Quaternion rot(yaw, 0,0);
       //tf::QuaternionTFToMsg(rot, odom.pose.orientation);
-      /*
+      
       odom.pos.x  = x;
       odom.pos.y  = y;
       odom.pos.th = yaw;
       odom.header.stamp = ros::Time::now();
       odom_pub.publish(odom);
-      */
-      /*
+      
       tf.sendTransform(tf::Stamped<tf::Transform>(
                                               tf::Transform(rot, 
                                               tf::Point(x, y, 0.0)),
                        ros::Time::now(), string("base_footprint"), string("odom")));
-      */
     }
+*/
 	  usleep(500);
   }
   return 0;

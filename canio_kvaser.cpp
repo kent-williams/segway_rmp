@@ -42,14 +42,14 @@ int
 CANIOKvaser::Init(long channel_freq)
 {
 
-        printf("Init CANIOKvaser...\n");
+        fprintf(stderr, "Init CANIOKvaser...\n");
 	int ret;
 
 	// Open up both CAN channels
 
 	for (int i =0; i < DUALCAN_NR_CHANNELS; i++)
 	{
-		printf("\tOpening Channel %d...\n", i);
+		fprintf(stderr, "\tOpening Channel %d...\n", i);
 		if((channels[i] =
 			canOpenChannel(i, canWANT_EXCLUSIVE | canWANT_EXTENDED)) < 0) {
 			return channels[i];
@@ -59,7 +59,7 @@ CANIOKvaser::Init(long channel_freq)
 		// to defaults if we use BAUD_500K
 		//    if ((ret = canSetBusParams(channels[i], channel_freq, 4, 3, 1, 1, 0)) < 0) {
 		
-                printf("\tSetting Channel Freq...\n");
+                fprintf(stderr, "\tSetting Channel Freq...\n");
                 if ((ret = canSetBusParams(channels[i], channel_freq, 0, 0, 0, 0, 0)) < 0)
 			return ret;
 
@@ -73,7 +73,7 @@ CANIOKvaser::Init(long channel_freq)
 			return ret;
 		}
 
-                printf("Turn on bus...\n");
+                fprintf(stderr, "Turn on bus...\n");
 		// turn on the bus!
 		if ((ret = canBusOn(channels[i])) < 0)
 			return ret;
@@ -110,31 +110,29 @@ CANIOKvaser::WritePacket(CanPacket &pkt)
 {
 	int ret;
 
-	printf("CANIO: WRITE: pkt: %s\n", pkt.toString());
+	fprintf(stderr, "CANIO: WRITE: pkt: %s\n", pkt.toString());
 
 	for (int i=0; i < DUALCAN_NR_CHANNELS; i++) {
                 
-                printf("Writing to channel %d...\n", i);
+                fprintf(stderr, "Writing to channel %d...\n", i);
 
 		if ((ret = canWriteWait(channels[i], pkt.id, pkt.msg, pkt.dlc,
 				pkt.flags, 1000)) < 0) {
-			printf("CANIO: write wait error %d\n", ret);
+			fprintf(stderr, "CANIO: write wait error %d\n", ret);
 			return ret;
 		}
 
-
 		if ((ret = canWriteSync(channels[i], 10000)) < 0) {
-			printf("CANIO: error %d on write sync\n", ret);
+			fprintf(stderr, "CANIO: error %d on write sync\n", ret);
 			switch (ret) {
 			case canERR_TIMEOUT:
-				printf("CANIO: TIMEOUT error\n");
+				fprintf(stderr, "CANIO: TIMEOUT error\n");
 				break;
 			default:
 				break;
 			}
 			return ret;
 		}
-
 	}
 
 	return 0;
