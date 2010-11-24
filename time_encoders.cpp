@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <cstdio>
-#include "segway_apox.h"
+#include "segway_rmp.h"
 #include "ros/time.h"
 
 static bool g_done = false;
@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "usage: print_encoders DEVICE_OF_APOX_USBCAN\n");
     return 1;
   }
-  SegwayApox segway;
+  SegwayRMP segway;
   signal(SIGINT, ctrlc_handler);
   printf("ctrl-c to exit.\n");
   float x = 0, y = 0, yaw = 0;

@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
-#include "segway_apox.h"
+#include "segway_rmp.h"
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
-#include "segway_apox/SegwayOdom.h"
+#include "segway_rmp/SegwayOdom.h"
 //#include "robot_msgs/PoseDot.h"
 //#include "robot_msgs/PoseStamped.h"
 //#include "deprecated_msgs/RobotBase2DOdom.h"
@@ -29,13 +29,13 @@ void cmd_vel_cb(const geometry_msgs::Twist::ConstPtr &cmd_vel)
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "segway_apox");
+  ros::init(argc, argv, "segway_rmp");
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 //  std::string port("/dev/ttyUSB2");
 //  nh_private.getParam("port", port);
 //  ROS_DEBUG("opening canbus on %s\n", port.c_str());
-  SegwayApox segway;
+  SegwayRMP segway;
 	tf::TransformBroadcaster tf;
   double last_send_time = ros::Time::now().toSec();
   //robot_msgs::PoseStamped odom;
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   //ros::Publisher odom_pub = nh.advertise<robot_msgs::PoseStamped>("odom", 1);
   //ros::Publisher odom_pub = nh.advertise<deprecated_msgs::RobotBase2DOdom>("odom", 1);
   ros::Subscriber vel_sub = nh.subscribe("cmd_vel", 10, cmd_vel_cb);
-  ros::Publisher odom_pub = nh.advertise<segway_apox::SegwayOdom>("odom", 1);
+  ros::Publisher odom_pub = nh.advertise<segway_rmp::SegwayOdom>("odom", 1);
   bool req_timeout = true;
 
   bool first = true;
@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     {
       float x = 0, y = 0, yaw = 0;
       uint32_t left, right;
-      segway_apox::SegwayOdom odom;
+      segway_rmp::SegwayOdom odom;
       odom.header.stamp = ros::Time::now();
       segway.get_last_odometry(x, y, yaw, left, right);
       odom.left = left;

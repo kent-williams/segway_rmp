@@ -8,8 +8,8 @@
 class SegwayBase
 {
 public:
-  SegwayApox(const char *device);
-  virtual ~SegwayApox();
+  SegwayRMP(const char *device);
+  virtual ~SegwayRMP();
 
   virtual void send_vel_cmd(float x_vel, float yaw_rate);
   virtual bool poll(float timeout_secs = 1.0);
